@@ -1,0 +1,15 @@
+.env
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+.terraform.tfstate
+override.tf
+override.tf.json
+*.tfvars
+terraform.tfvars
+.vscode/
+# Keys: ignore private keys only
+keys/id_rsa
+keys/id_rsa.pem
+keys/*.key
