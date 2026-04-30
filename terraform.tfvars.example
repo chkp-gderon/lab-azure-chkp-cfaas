@@ -6,6 +6,3 @@ environment  = "lab"
 ssh_public_key_path = "./keys/lab-key.pub"
 
 vm_size = "Standard_B1s"
-
-# Storage account name for state/assets used by the lab
-storage_account_name = "examplelabstorage"
