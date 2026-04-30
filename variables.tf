@@ -81,3 +81,9 @@ variable "vms" {
     linux3  = { vnet = "rnd-dep", subnet = "private", public = false }
   }
 }
+
+variable "repo_name" {
+  description = "Optional repository name to include as a tag. If empty, derived from module path."
+  type        = string
+  default     = ""
+}

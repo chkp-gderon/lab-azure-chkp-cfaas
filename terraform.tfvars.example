@@ -1,0 +1,11 @@
+location     = "northeurope"
+project_name = "azure-chkp-cfaas"
+environment  = "lab"
+
+# Paste your public key into keys/lab-key.pub or point to another file.
+ssh_public_key_path = "./keys/lab-key.pub"
+
+vm_size = "Standard_B1s"
+
+# Storage account name for state/assets used by the lab
+storage_account_name = "examplelabstorage"

@@ -1,6 +1,7 @@
 resource "azurerm_resource_group" "rg" {
   name     = local.name_prefix
   location = var.location
+  tags     = local.common_tags
 }
 
 locals {
@@ -15,6 +16,15 @@ locals {
       }
     ]
   ])
+
+  repo = var.repo_name != "" ? var.repo_name : basename(abspath(path.root))
+
+  common_tags = {
+    created_by  = "terraform"
+    environment = var.environment
+    project     = var.project_name
+    github_repo = local.repo
+  }
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -23,15 +33,14 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   address_space       = each.value.address_space
-  tags = {
-    environment = var.environment
-  }
+  tags = local.common_tags
 }
 
 resource "azurerm_network_security_group" "bastion" {
   name                = "${local.name_prefix}-nsg-bastion"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  tags                = local.common_tags
 
   security_rule {
     name                       = "Allow-SSH"
