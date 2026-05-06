@@ -75,9 +75,9 @@ variable "vms" {
     public = bool
   }))
   default = {
-    bastion = { vnet = "qa-dep", subnet = "public",  public = true }
+    bastion = { vnet = "qa-dep", subnet = "public", public = true }
     linux1  = { vnet = "qa-dep", subnet = "private", public = false }
-    linux2  = { vnet = "hr-dep", subnet = "private",  public = false }
+    linux2  = { vnet = "hr-dep", subnet = "private", public = false }
     linux3  = { vnet = "rnd-dep", subnet = "private", public = false }
   }
 }
@@ -86,4 +86,74 @@ variable "repo_name" {
   description = "Optional repository name to include as a tag. If empty, derived from module path."
   type        = string
   default     = ""
+}
+variable "storage_account_name" {
+  description = "Name of the storage account used for Terraform state"
+  type        = string
+  default     = ""
+}
+
+variable "storage_account_resource_group" {
+  description = "Resource group containing the tfstate storage account"
+  type        = string
+  default     = ""
+}
+
+variable "git_repo" {
+  description = "Repository URL used for tagging the storage account"
+  type        = string
+  default     = ""
+}
+
+variable "git_branch" {
+  description = "Git branch used for tagging the storage account"
+  type        = string
+  default     = ""
+}
+
+variable "git_commit" {
+  description = "Git commit SHA used for tagging the storage account"
+  type        = string
+  default     = ""
+}
+
+variable "git_commit_date" {
+  description = "Git commit date/time (ISO 8601) used for tagging the storage account"
+  type        = string
+  default     = ""
+}
+
+variable "checkpoint_sp_object_id" {
+  description = "Object ID of the Check Point service principal in your tenant (preferred input)."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.checkpoint_sp_object_id == "" || can(regex("^[0-9a-fA-F-]{36}$", var.checkpoint_sp_object_id))
+    error_message = "checkpoint_sp_object_id must be empty or a valid GUID."
+  }
+}
+
+variable "isv_sp_object_id" {
+  description = "Legacy alias for checkpoint_sp_object_id. Keep empty unless you need backward compatibility."
+  type        = string
+  default     = ""
+
+  validation {
+    condition     = var.isv_sp_object_id == "" || can(regex("^[0-9a-fA-F-]{36}$", var.isv_sp_object_id))
+    error_message = "isv_sp_object_id must be empty or a valid GUID."
+  }
+}
+
+variable "assignable_scopes" {
+  description = "Subscription scopes where Check Point is allowed to use this role. This does not grant access by itself; role assignments do."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition = alltrue([
+      for s in var.assignable_scopes : can(regex("^/subscriptions/[0-9a-fA-F-]{36}$", s))
+    ])
+    error_message = "Each assignable scope must match /subscriptions/<subscription-guid>."
+  }
 }

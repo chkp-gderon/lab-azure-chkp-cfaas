@@ -1,6 +1,6 @@
 # Azure Check Point Cloud Firewall as a Service Lab
 
-This environment deploys a 100% Terraform-based Azure lab for testing Check Point Cloud Firewall as a Service inspection patterns:
+This environment deploys a Terraform-based Azure lab for testing Check Point Cloud Firewall as a Service inspection patterns:
 
 - 3 client NETs (QA Dep, HR Dep and RnD Dep)
 - 3 EC2 instances:
@@ -14,6 +14,25 @@ This environment deploys a 100% Terraform-based Azure lab for testing Check Poin
 ![AWS Check Point Centralized Inspection Architecture](./drawings/lab-azure-chkp-cfaas.drawio.png)
 
 To edit this diagram, open [drawings/lab-azure-chkp-cfaas.drawio.png](./drawings/lab-azure-chkp-cfaas.drawio.png) with [diagrams.net](https://app.diagrams.net/) (File -> Open From -> GitHub).
+
+## IAM For Check Point VNet Peering
+
+This repository creates a custom Azure role and assigns it to the Check Point service principal for each subscription listed in `assignable_scopes`.
+
+Important:
+
+- The custom role permissions are defined in Terraform code (`iam.tf`).
+- `AssignableScopes` limits where the role can be used. It does not grant access on its own.
+- Access is granted by role assignments created per scope for the provided Check Point SP object ID.
+
+### Role Permissions Applied By Terraform
+
+The role allows only VNet peering operations:
+
+- `Microsoft.Network/virtualNetworks/virtualNetworkPeerings/read`
+- `Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write`
+- `Microsoft.Network/virtualNetworks/virtualNetworkPeerings/delete`
+- `Microsoft.Network/virtualNetworks/peer/action`
 
 ## Environment Setup
 
@@ -50,6 +69,19 @@ terraform init \
   -backend-config="key=terraform.tfstate"
 ```
 
+**Tagging tfstate storage account**
+
+- **Purpose:** Tag the Azure Storage Account that holds Terraform state with Git metadata so the state can be traced back to the repository, branch and commit that created or last touched it.
+- **Script:** [scripts/tag-tfstate-storage.sh](scripts/tag-tfstate-storage.sh) — updates tags `git_repo`, `git_branch`, `git_commit`, and `git_commit_date` on the storage account.
+- **How to run:** Source [.env](.env) (or set the required env vars) then run:
+
+```
+bash scripts/tag-tfstate-storage.sh
+```
+- **Requirements:** `az` CLI and Azure credentials (`ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_TENANT_ID`) available in the environment or in `.env`.
+- **Terraform alternative:** To manage tags declaratively, import the storage account into Terraform and add an `azurerm_storage_account` resource (see `storage_state.tf`).
+- **Use cases:** Run the script manually after creating the storage account, include it in CI to label state storage automatically, or use it for auditing and discovery of which repo/commit owns the state.
+
 ## Quick Start
 
 ### Deployment Instructions
@@ -60,18 +92,32 @@ terraform init \
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-2. Paste your public key into `keys/lab-key.pub` (or change `public_key_path`).
+2. Register the Check Point multi-tenant application in your tenant and grant admin consent:
 
-3. Update values in `terraform.tfvars` where needed
+```bash
+az ad sp create --id <appId>
+```
 
-4. Initialize and validate:
+3. Retrieve the object ID of the created service principal and set it in `terraform.tfvars` as `checkpoint_sp_object_id`.
+
+4. Update values in `terraform.tfvars` where needed
+
+5. Copy, edit and set env variables:
+
+```bash
+cp .env.example .env
+```
+
+6. Paste your public key into `keys/lab-key.pub` (or change `public_key_path`).
+
+7. Initialize and validate:
 
 ```bash
 terraform init
 terraform validate
 ```
 
-5. Deploy:
+8. Deploy:
 
 ```bash
 terraform plan -out=tfplan

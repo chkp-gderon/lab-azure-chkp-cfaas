@@ -6,3 +6,15 @@ environment  = "lab"
 ssh_public_key_path = "./keys/lab-key.pub"
 
 vm_size = "Standard_B1s"
+
+# IAM for Check Point VNet peering
+# The service principal is created by Terraform (azuread_service_principal.checkpoint).
+# To use a different service principal, set checkpoint_sp_object_id below.
+# checkpoint_sp_object_id = "11111111-1111-1111-1111-111111111111"
+
+# assignable_scopes: Where the custom role is allowed to be used.
+# This does not grant access by itself; the role assignment below grants access to the SP at each listed scope.
+# Keep this list limited to subscriptions where Check Point should create VNet peerings.
+assignable_scopes = [
+	"/subscriptions/00000000-0000-0000-0000-000000000000"
+]
