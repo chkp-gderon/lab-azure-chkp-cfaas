@@ -92,13 +92,11 @@ bash scripts/tag-tfstate-storage.sh
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-2. Register the Check Point multi-tenant application in your tenant and grant admin consent:
+2. Provide an existing Check Point service principal object ID in `terraform.tfvars` as `checkpoint_sp_object_id`.
 
-```bash
-az ad sp create --id <appId>
-```
+  If you do not have a service principal, ask your tenant administrator to create one or to grant your account permissions to register applications. This repository no longer creates Azure AD applications.
 
-3. Retrieve the object ID of the created service principal and set it in `terraform.tfvars` as `checkpoint_sp_object_id`.
+3. Set the `checkpoint_sp_object_id` value in `terraform.tfvars`.
 
 4. Update values in `terraform.tfvars` where needed
 

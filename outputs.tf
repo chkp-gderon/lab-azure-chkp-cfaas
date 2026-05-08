@@ -4,11 +4,11 @@ output "resource_group_name" {
 
 output "checkpoint_service_principal" {
   value = {
-    client_id    = azuread_application.checkpoint.client_id
-    object_id    = azuread_service_principal.checkpoint.object_id
-    display_name = azuread_application.checkpoint.display_name
+    object_id = trimspace(var.checkpoint_sp_object_id) != "" ? trimspace(var.checkpoint_sp_object_id) : (
+      trimspace(var.isv_sp_object_id) != "" ? trimspace(var.isv_sp_object_id) : null
+    )
   }
-  description = "Check Point service principal details"
+  description = "Check Point service principal object ID (provided). Client ID/display name not managed by this template."
 }
 
 output "vnets" {

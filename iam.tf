@@ -13,28 +13,15 @@ locals {
     "Microsoft.Network/virtualNetworks/peer/action"
   ]
 
-  checkpoint_sp_object_id = coalesce(
-    length(trimspace(var.checkpoint_sp_object_id)) > 0 ? trimspace(var.checkpoint_sp_object_id) : null,
-    length(trimspace(var.isv_sp_object_id)) > 0 ? trimspace(var.isv_sp_object_id) : null,
-    azuread_service_principal.checkpoint.object_id
+  checkpoint_sp_object_id = trimspace(var.checkpoint_sp_object_id) != "" ? trimspace(var.checkpoint_sp_object_id) : (
+    trimspace(var.isv_sp_object_id) != "" ? trimspace(var.isv_sp_object_id) : null
   )
 }
 
 
-// Create the Check Point service principal
-resource "azuread_application" "checkpoint" {
-  display_name = "CheckPoint-VNetPeering"
-}
-
-resource "azuread_service_principal" "checkpoint" {
-  client_id = azuread_application.checkpoint.client_id
-}
-
-resource "time_sleep" "wait_for_checkpoint_sp_replication" {
-  depends_on = [azuread_service_principal.checkpoint]
-
-  create_duration = "45s"
-}
+// NOTE: Creation of the Check Point Azure AD application/service-principal
+// has been removed. Provide an existing service principal object ID via
+// `checkpoint_sp_object_id` (preferred) or `isv_sp_object_id` (legacy).
 
 resource "azurerm_role_definition" "checkpoint_vnet_peering" {
   name        = local.checkpoint_vnet_peering_role_name
@@ -52,22 +39,15 @@ resource "azurerm_role_definition" "checkpoint_vnet_peering" {
 }
 
 resource "azurerm_role_assignment" "checkpoint_vnet_peering_assignment" {
-  for_each = toset(var.assignable_scopes)
+  for_each = local.checkpoint_sp_object_id != null ? toset(var.assignable_scopes) : []
 
   scope              = each.value
   role_definition_id = azurerm_role_definition.checkpoint_vnet_peering.role_definition_resource_id
   principal_id       = local.checkpoint_sp_object_id
   principal_type     = "ServicePrincipal"
 
-  depends_on = [
-    time_sleep.wait_for_checkpoint_sp_replication,
-    azurerm_role_definition.checkpoint_vnet_peering
-  ]
+  depends_on = [azurerm_role_definition.checkpoint_vnet_peering]
 
-  lifecycle {
-    precondition {
-      condition     = local.checkpoint_sp_object_id != null
-      error_message = "Set checkpoint_sp_object_id (preferred) or isv_sp_object_id (legacy)."
-    }
-  }
+  # Role assignments are only created when a Check Point service principal
+  # object ID is provided via `checkpoint_sp_object_id` or `isv_sp_object_id`.
 }
