@@ -146,14 +146,27 @@ variable "isv_sp_object_id" {
 }
 
 variable "assignable_scopes" {
-  description = "Subscription scopes where Check Point is allowed to use this role. This does not grant access by itself; role assignments do."
+  description = "Subscription or resource group scopes where Check Point is allowed to use this role. This does not grant access by itself; role assignments do."
   type        = list(string)
   default     = []
 
   validation {
     condition = alltrue([
-      for s in var.assignable_scopes : can(regex("^/subscriptions/[0-9a-fA-F-]{36}$", s))
+      for s in var.assignable_scopes : can(regex("^/subscriptions/[0-9a-fA-F-]{36}(/resourceGroups/[^/]+)?$", s))
     ])
-    error_message = "Each assignable scope must match /subscriptions/<subscription-guid>."
+    error_message = "Each assignable scope must match /subscriptions/<subscription-guid> or /subscriptions/<subscription-guid>/resourceGroups/<resource-group-name>."
+  }
+}
+
+variable "role_assignment_scopes" {
+  description = "Optional explicit scopes where role assignments are created. If empty, assignable_scopes is used. Supports subscription, resource group, or VNet resource scopes."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition = alltrue([
+      for s in var.role_assignment_scopes : can(regex("^/subscriptions/[0-9a-fA-F-]{36}(/resourceGroups/[^/]+(/providers/Microsoft\\.Network/virtualNetworks/[^/]+)?)?$", s))
+    ])
+    error_message = "Each role assignment scope must match a subscription, resource group, or VNet resource ID."
   }
 }

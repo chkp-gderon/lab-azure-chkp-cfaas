@@ -5,7 +5,7 @@ data "azurerm_subscription" "current" {}
 // Local values used throughout the configuration.
 locals {
   checkpoint_vnet_peering_role_name        = "CheckPoint-VNet-Peering-Role"
-  checkpoint_vnet_peering_role_description = "Allow VNet peering on the scoped subscriptions."
+  checkpoint_vnet_peering_role_description = "Allow VNet peering on the scoped resources."
   checkpoint_vnet_peering_role_actions = [
     "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/read",
     "Microsoft.Network/virtualNetworks/virtualNetworkPeerings/write",
@@ -16,6 +16,10 @@ locals {
   checkpoint_sp_object_id = trimspace(var.checkpoint_sp_object_id) != "" ? trimspace(var.checkpoint_sp_object_id) : (
     trimspace(var.isv_sp_object_id) != "" ? trimspace(var.isv_sp_object_id) : null
   )
+
+  # By default, create role assignments at each assignable scope. When
+  # role_assignment_scopes is provided, allow more granular scopes such as VNets.
+  checkpoint_role_assignment_scopes = length(var.role_assignment_scopes) > 0 ? var.role_assignment_scopes : var.assignable_scopes
 }
 
 
@@ -39,7 +43,7 @@ resource "azurerm_role_definition" "checkpoint_vnet_peering" {
 }
 
 resource "azurerm_role_assignment" "checkpoint_vnet_peering_assignment" {
-  for_each = local.checkpoint_sp_object_id != null ? toset(var.assignable_scopes) : []
+  for_each = local.checkpoint_sp_object_id != null ? toset(local.checkpoint_role_assignment_scopes) : []
 
   scope              = each.value
   role_definition_id = azurerm_role_definition.checkpoint_vnet_peering.role_definition_resource_id

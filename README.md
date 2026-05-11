@@ -17,13 +17,15 @@ To edit this diagram, open [drawings/lab-azure-chkp-cfaas.drawio.png](./drawings
 
 ## IAM For Check Point VNet Peering
 
-This repository creates a custom Azure role and assigns it to the Check Point service principal for each subscription listed in `assignable_scopes`.
+This repository creates a custom Azure role and assigns it to the Check Point service principal for each scope listed in `assignable_scopes`.
 
 Important:
 
 - The custom role permissions are defined in Terraform code (`iam.tf`).
 - `AssignableScopes` limits where the role can be used. It does not grant access on its own.
+- Use resource group scope (preferred) instead of subscription scope when possible.
 - Access is granted by role assignments created per scope for the provided Check Point SP object ID.
+- Optional: set `role_assignment_scopes` to assign only to specific VNets (or other narrower scopes) while keeping `assignable_scopes` at subscription/resource-group scope.
 
 ### Role Permissions Applied By Terraform
 

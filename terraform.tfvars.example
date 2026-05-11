@@ -14,7 +14,7 @@ vm_size = "Standard_B1s"
 
 # assignable_scopes: Where the custom role is allowed to be used.
 # This does not grant access by itself; the role assignment below grants access to the SP at each listed scope.
-# Keep this list limited to subscriptions where Check Point should create VNet peerings.
+# Keep this list limited to the smallest scope needed (resource group preferred).
 assignable_scopes = [
 	"/subscriptions/00000000-0000-0000-0000-000000000000"
 ]
