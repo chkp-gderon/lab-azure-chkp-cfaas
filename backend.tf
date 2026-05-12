@@ -1,20 +1,12 @@
 terraform {
-  # Default to a local backend for easier validation and testing.
-  # To use the Azure RM backend, replace the block below with:
-  # backend "azurerm" {
-  #   resource_group_name  = "<rg>"
-  #   storage_account_name = "<sa>"
-  #   container_name       = "<container>"
-  #   key                  = "terraform.tfstate"
-  # }
-  backend "azurerm" {
-    resource_group_name  = "tfstate"
-    storage_account_name = "tfstate923197315"
-    container_name       = "tfstate"
-    key                  = "terraform.tfstate"
-  }
+  # Keep backend configuration empty here and provide values at init time,
+  # for example via shell environment variables expanded into -backend-config.
+  backend "azurerm" {}
 }
 
-# Note: The repository uses an azurerm backend. If you want to
-# store state in Azure Storage, run `terraform init -backend-config=...`
-# or update this file with the azurerm backend configuration.
+# Example:
+# terraform init \
+#   -backend-config="resource_group_name=$RESOURCE_GROUP_NAME" \
+#   -backend-config="storage_account_name=$STORAGE_ACCOUNT_NAME" \
+#   -backend-config="container_name=$CONTAINER_NAME" \
+#   -backend-config="key=terraform.tfstate"
