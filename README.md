@@ -24,7 +24,8 @@ Important:
 - The custom role permissions are defined in Terraform code (`iam.tf`).
 - `AssignableScopes` limits where the role can be used. It does not grant access on its own.
 - Use resource group scope (preferred) instead of subscription scope when possible.
-- Access is granted by role assignments created per scope for the provided Check Point SP object ID.
+- Access is granted by role assignments created per scope for the resolved Check Point SP object ID.
+- You can provide either `checkpoint_sp_app_id` (recommended) or `checkpoint_sp_object_id`.
 - Optional: set `role_assignment_scopes` to assign only to specific VNets (or other narrower scopes) while keeping `assignable_scopes` at subscription/resource-group scope.
 
 ### Role Permissions Applied By Terraform
@@ -37,6 +38,22 @@ The role allows only VNet peering operations:
 - `Microsoft.Network/virtualNetworks/peer/action`
 
 ## Environment Setup
+
+Set the required environment variables in your shell or as GitHub Actions Secrets. Do not store secrets in files in this repository.
+
+### Required Environment Variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `ARM_CLIENT_ID` | Yes | Azure service principal client/application ID used by Terraform and Azure CLI authentication. |
+| `ARM_TENANT_ID` | Yes | Azure tenant ID for service principal authentication. |
+| `ARM_SUBSCRIPTION_ID` | Yes | Azure subscription ID where resources are deployed. |
+| `ARM_CLIENT_SECRET` | Yes | Client secret/password for the Azure service principal. |
+| `RESOURCE_GROUP_NAME` | Yes | Resource group name that hosts the Terraform state storage account. |
+| `STORAGE_ACCOUNT_NAME` | Yes | Azure Storage account name used for Terraform remote state. |
+| `CONTAINER_NAME` | Yes | Blob container name used to store the Terraform state file. |
+| `STORAGE_ACCESS_KEY` | Yes | Access key for the Terraform state storage account. |
+
 
 ### Remote State (Optional)
 
@@ -75,12 +92,12 @@ terraform init \
 
 - **Purpose:** Tag the Azure Storage Account that holds Terraform state with Git metadata so the state can be traced back to the repository, branch and commit that created or last touched it.
 - **Script:** [scripts/tag-tfstate-storage.sh](scripts/tag-tfstate-storage.sh) — updates tags `git_repo`, `git_branch`, `git_commit`, and `git_commit_date` on the storage account.
-- **How to run:** Source [.env](.env) (or set the required env vars) then run:
+- **How to run:** Set the required environment variables in your shell (or CI secrets) and run:
 
 ```
 bash scripts/tag-tfstate-storage.sh
 ```
-- **Requirements:** `az` CLI and Azure credentials (`ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_TENANT_ID`) available in the environment or in `.env`.
+- **Requirements:** `az` CLI and Azure credentials (`ARM_CLIENT_ID`, `ARM_CLIENT_SECRET`, `ARM_TENANT_ID`) available in the environment.
 - **Terraform alternative:** To manage tags declaratively, import the storage account into Terraform and add an `azurerm_storage_account` resource (see `storage_state.tf`).
 - **Use cases:** Run the script manually after creating the storage account, include it in CI to label state storage automatically, or use it for auditing and discovery of which repo/commit owns the state.
 
@@ -94,19 +111,19 @@ bash scripts/tag-tfstate-storage.sh
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-2. Provide an existing Check Point service principal object ID in `terraform.tfvars` as `checkpoint_sp_object_id`.
+2. Provide an existing Check Point service principal app/client ID in `terraform.tfvars` as `checkpoint_sp_app_id`.
+
+  Terraform will resolve the service principal object ID from Azure AD automatically.
+
+  Optional: if you already have the object ID, set `checkpoint_sp_object_id` directly (this takes precedence).
 
   If you do not have a service principal, ask your tenant administrator to create one or to grant your account permissions to register applications. This repository no longer creates Azure AD applications.
 
-3. Set the `checkpoint_sp_object_id` value in `terraform.tfvars`.
+3. Set either `checkpoint_sp_app_id` (recommended) or `checkpoint_sp_object_id` in `terraform.tfvars`.
 
 4. Update values in `terraform.tfvars` where needed
 
-5. Copy, edit and set env variables:
-
-```bash
-cp .env.example .env
-```
+5. Set required environment variables in your shell or CI secrets (see Environment Setup).
 
 6. Paste your public key into `keys/lab-key.pub` (or change `public_key_path`).
 
